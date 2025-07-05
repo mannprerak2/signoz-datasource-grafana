@@ -9,7 +9,7 @@ import {
   FieldType,
 } from '@grafana/data';
 
-import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY } from './types';
+import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, queryTypeOptions } from './types';
 import { lastValueFrom } from 'rxjs';
 
 import defaults from 'lodash/defaults';
@@ -48,67 +48,16 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           ],
         });
 
-        const { queryType, panelType } = query;
+        const { queryType, panelType, signozDataSource } = query;
 
-        const requestData = {
-          start: from,
-          end: to,
-          step: 60,
-          variables: {},
-          compositeQuery: {
-            queryType: queryType,
-            panelType: panelType,
-            fillGaps: false,
-            builderQueries: {
-              A: {
-                dataSource: 'traces',
-                queryName: 'A',
-                aggregateOperator: 'count',
-                aggregateAttribute: {
-                  id: '------false',
-                  dataType: '',
-                  key: '',
-                  isColumn: false,
-                  type: '',
-                  isJSON: false,
-                },
-                timeAggregation: 'rate',
-                spaceAggregation: 'sum',
-                functions: [],
-                filters: {
-                  items: [],
-                  op: 'AND',
-                },
-                expression: 'A',
-                disabled: false,
-                stepInterval: 60,
-                having: [],
-                limit: null,
-                orderBy: [
-                  {
-                    columnName: 'timestamp',
-                    order: 'desc',
-                  },
-                  {
-                    columnName: 'id',
-                    order: 'desc',
-                  },
-                ],
-                groupBy: [],
-                legend: '',
-                reduceTo: 'avg',
-              },
-            },
-          },
-          dataSource: 'traces',
-        };
-
-        const response = await this.request(
-          '/signoz_api/api/v4/query_range',
-          '',
-          'POST',
-          requestData
-        );
+        const response = await this.makeSignozRequest({
+          from: from,
+          to: to,
+          datasource: signozDataSource,
+          queryType: queryType,
+          panelType: panelType,
+          aggregateOperator: "count"
+        }) as any;
 
         let rawData = response.data as any;
         const finalSeries = rawData?.data?.result[0]?.series[0]?.values;
@@ -120,7 +69,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
         return frame;
       }
-    ));
+      ));
 
     return { data };
   }
@@ -174,6 +123,70 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         status: 'error',
         message,
       };
+    }
+  }
+
+  async makeSignozRequest(
+    data: {
+      from: number
+      to: number,
+      datasource: string,
+      queryType?: string,
+      panelType?: string,
+      step?: number,
+      aggregateOperator?: string
+    })  {
+    try {
+
+      const requestData = {
+        start: data.from,
+        end: data.to,
+        step: data.step ?? 60,
+        variables: {},
+        compositeQuery: {
+          queryType: data.queryType ?? DEFAULT_QUERY.queryType,
+          panelType: data.panelType ?? DEFAULT_QUERY.panelType,
+          fillGaps: false,
+          builderQueries: {
+            A: {
+              dataSource: data.datasource,
+              queryName: 'A',
+              expression: 'A',
+              stepInterval: 60,
+              aggregateOperator: data.aggregateOperator ?? "noop",
+              timeAggregation: 'rate',
+              spaceAggregation: 'sum',
+              functions: [],
+              filters: {
+                items: [],
+                op: 'AND',
+              },
+              disabled: false,
+              having: [],
+              limit: null,
+              orderBy: [
+                {
+                  columnName: 'timestamp',
+                  order: 'desc',
+                }
+              ],
+              groupBy: [],
+              legend: '',
+              reduceTo: 'avg',
+            },
+          },
+        }
+      };
+
+      return await this.request(
+        '/signoz_api/api/v4/query_range',
+        '',
+        'POST',
+        requestData
+      );
+    } catch (err) {
+      console.error("Error in signoz request: " + err, err)
+      return undefined;
     }
   }
 }

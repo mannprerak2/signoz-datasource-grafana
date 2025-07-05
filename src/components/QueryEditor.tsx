@@ -2,7 +2,7 @@ import React, { ChangeEvent } from 'react';
 import { InlineField, Input, Stack, Select, Combobox } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
-import { MyDataSourceOptions, MyQuery, queryTypeOptions, panelTypeOptions } from '../types';
+import { MyDataSourceOptions, MyQuery, queryTypeOptions, panelTypeOptions, signozDataSourceOptions } from '../types';
 
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
 
@@ -16,10 +16,21 @@ export function QueryEditor({ query, onChange, onRunQuery }: Props) {
     onChange({ ...query, panelType: option.value });
   };
 
-  const { queryType, panelType } = query;
+  const onSignozDataSourceChange = (option: any) => {
+    onChange({ ...query, signozDataSource: option.value });
+  };
+
+  const { queryType, panelType, signozDataSource } = query;
 
   return (
     <Stack gap={0}>
+      <InlineField label="Data Source">
+        <Combobox
+          options={signozDataSourceOptions}
+          value={signozDataSource}
+          onChange={onSignozDataSourceChange}
+        />
+      </InlineField>
       <InlineField label="Query Type">
         <Combobox
           options={queryTypeOptions}

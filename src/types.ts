@@ -4,11 +4,13 @@ import { DataQuery } from '@grafana/schema';
 export interface MyQuery extends DataQuery {
   queryType?: string;
   panelType?: string;
+  signozDataSource: string;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
   queryType: 'builder',
   panelType: 'graph',
+  signozDataSource: 'traces',
 };
 
 export const queryTypeOptions = [
@@ -22,6 +24,19 @@ export const panelTypeOptions = [
   // { value: 'table', label: 'Table' },
   // { value: 'value_list', label: 'Value List' },
   // { value: 'trace', label: 'Trace' },
+];
+
+export const signozDataSourceOptions = [
+  { value: 'traces', label: 'Traces' },
+  { value: 'metrics', label: 'Metrics' },
+  { value: 'logs', label: 'Logs' },
+];
+
+export const aggregateOperatorOptions = [
+  { value: 'noop', label: 'No Op' },
+  { value: 'count', label: 'Count' },
+  { value: 'p95', label: 'P95' },
+  { value: 'avg', label: 'Avg' },
 ];
 
 export interface DataPoint {
