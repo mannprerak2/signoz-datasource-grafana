@@ -28,7 +28,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   filterQuery(query: MyQuery): boolean {
     // if no query has been provided, prevent the query from being executed
-    return !!query.queryText;
+    return true;
   }
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
@@ -37,79 +37,90 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const to = range!.to.valueOf();
 
     // Return a constant for each query.
-    const data = await Promise.all(options.targets.map(async (target) => {
-      const query = defaults(target, DEFAULT_QUERY);
-      const frame = createDataFrame({
-        refId: query.refId,
-        fields: [
-          { name: 'time', type: FieldType.time },
-          { name: 'value', type: FieldType.number },
-        ],
-      });
+    const data = await Promise.all(
+      options.targets.map(async (target) => {
+        const query = defaults(target, DEFAULT_QUERY);
+        const frame = createDataFrame({
+          refId: query.refId,
+          fields: [
+            { name: 'time', type: FieldType.time },
+            { name: 'value', type: FieldType.number },
+          ],
+        });
 
-      const response = await this.request("/signoz_api/api/v4/query_range", "", "POST", {
-        "start": from,
-        "end": to,
-        "step": 60,
-        "variables": {},
-        "compositeQuery": {
-          "queryType": "builder",
-          "panelType": "graph",
-          "fillGaps": false,
-          "builderQueries": {
-            "A": {
-              "dataSource": "traces",
-              "queryName": "A",
-              "aggregateOperator": "count",
-              "aggregateAttribute": {
-                "id": "------false",
-                "dataType": "",
-                "key": "",
-                "isColumn": false,
-                "type": "",
-                "isJSON": false
-              },
-              "timeAggregation": "rate",
-              "spaceAggregation": "sum",
-              "functions": [],
-              "filters": {
-                "items": [],
-                "op": "AND"
-              },
-              "expression": "A",
-              "disabled": false,
-              "stepInterval": 60,
-              "having": [],
-              "limit": null,
-              "orderBy": [
-                {
-                  "columnName": "timestamp",
-                  "order": "desc"
+        const { queryType, panelType } = query;
+
+        const requestData = {
+          start: from,
+          end: to,
+          step: 60,
+          variables: {},
+          compositeQuery: {
+            queryType: queryType,
+            panelType: panelType,
+            fillGaps: false,
+            builderQueries: {
+              A: {
+                dataSource: 'traces',
+                queryName: 'A',
+                aggregateOperator: 'count',
+                aggregateAttribute: {
+                  id: '------false',
+                  dataType: '',
+                  key: '',
+                  isColumn: false,
+                  type: '',
+                  isJSON: false,
                 },
-                {
-                  "columnName": "id",
-                  "order": "desc"
-                }
-              ],
-              "groupBy": [],
-              "legend": "",
-              "reduceTo": "avg"
-            }
-          }
-        },
-        "dataSource": "traces"
-      });
+                timeAggregation: 'rate',
+                spaceAggregation: 'sum',
+                functions: [],
+                filters: {
+                  items: [],
+                  op: 'AND',
+                },
+                expression: 'A',
+                disabled: false,
+                stepInterval: 60,
+                having: [],
+                limit: null,
+                orderBy: [
+                  {
+                    columnName: 'timestamp',
+                    order: 'desc',
+                  },
+                  {
+                    columnName: 'id',
+                    order: 'desc',
+                  },
+                ],
+                groupBy: [],
+                legend: '',
+                reduceTo: 'avg',
+              },
+            },
+          },
+          dataSource: 'traces',
+        };
 
-      let rawData = response.data as any;
-      const finalSeries = rawData?.data?.result[0]?.series[0]?.values
-      finalSeries.sort((i1: any, i2: any) => i1["timestamp"] - i2["timestamp"])
-      for (let v of finalSeries) {
-        frame.fields[0].values!.push(v["timestamp"]);
-        frame.fields[1].values!.push(parseInt(v["value"], 10));
+        const response = await this.request(
+          '/signoz_api/api/v4/query_range',
+          '',
+          'POST',
+          requestData
+        );
+
+        let rawData = response.data as any;
+        const finalSeries = rawData?.data?.result[0]?.series[0]?.values;
+        finalSeries.sort((i1: any, i2: any) => i1['timestamp'] - i2['timestamp']);
+        for (let v of finalSeries) {
+          frame.fields[0].values!.push(v['timestamp']);
+          frame.fields[1].values!.push(parseInt(v['value'], 10));
+        }
+
+        return frame;
       }
-
-      return frame;
-    }));
+    ));
 
     return { data };
   }

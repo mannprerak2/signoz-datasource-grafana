@@ -1,0 +1,65 @@
+{
+    "start": 1751723297000,
+    "end": 1751726897000,
+    "step": 60,
+    "variables": {},
+    "compositeQuery": {
+        "queryType": "builder",
+        "panelType": "graph",
+        "fillGaps": false,
+        "builderQueries": {
+            "A": {
+                "dataSource": "traces",
+                "queryName": "A",
+                "aggregateOperator": "count",
+                "aggregateAttribute": {
+                    "id": "------false",
+                    "dataType": "",
+                    "key": "",
+                    "isColumn": false,
+                    "type": "",
+                    "isJSON": false
+                },
+                "timeAggregation": "rate",
+                "spaceAggregation": "sum",
+                "functions": [],
+                "filters": {
+                    "items": [],
+                    "op": "AND"
+                },
+                "expression": "A",
+                "disabled": false,
+                "stepInterval": 60,
+                "having": [],
+                "limit": null,
+                "orderBy": [
+                    {
+                        "columnName": "timestamp",
+                        "order": "desc"
+                    }
+                ],
+                "groupBy": [
+                    {
+                        "key": "service.name",
+                        "dataType": "string",
+                        "type": "resource",
+                        "isColumn": true,
+                        "isJSON": false,
+                        "id": "service.name--string--resource--true"
+                    },
+                    {
+                        "key": "http.response.status_code",
+                        "dataType": "float64",
+                        "type": "tag",
+                        "isColumn": false,
+                        "isJSON": false,
+                        "id": "http.response.status_code--float64--tag--false"
+                    }
+                ],
+                "legend": "",
+                "reduceTo": "avg"
+            }
+        }
+    },
+    "dataSource": "traces"
+}

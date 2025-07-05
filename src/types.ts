@@ -2,13 +2,27 @@ import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
 export interface MyQuery extends DataQuery {
-  queryText?: string;
-  constant: number;
+  queryType?: string;
+  panelType?: string;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
-  constant: 6.5,
+  queryType: 'builder',
+  panelType: 'graph',
 };
+
+export const queryTypeOptions = [
+  { value: 'builder', label: 'Builder' },
+  // { value: 'clickhouse_sql', label: 'ClickHouse SQL' },
+  // { value: 'promql', label: 'PromQL' },
+];
+
+export const panelTypeOptions = [
+  { value: 'graph', label: 'Graph' },
+  // { value: 'table', label: 'Table' },
+  // { value: 'value_list', label: 'Value List' },
+  // { value: 'trace', label: 'Trace' },
+];
 
 export interface DataPoint {
   Time: number;
