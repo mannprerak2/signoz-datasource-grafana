@@ -12,6 +12,8 @@ import {
 import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, DataSourceResponse } from './types';
 import { lastValueFrom } from 'rxjs';
 
+import defaults from 'lodash/defaults';
+
 export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   baseUrl: string;
 
@@ -34,15 +36,28 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const from = range!.from.valueOf();
     const to = range!.to.valueOf();
 
+    console.log("baseurl: " + this.baseUrl)
     // Return a constant for each query.
     const data = options.targets.map((target) => {
-      return createDataFrame({
-        refId: target.refId,
+      const query = defaults(target, DEFAULT_QUERY);
+      const frame = createDataFrame({
+        refId: query.refId,
         fields: [
-          { name: 'Time', values: [from, to], type: FieldType.time },
-          { name: 'Value', values: [target.constant, target.constant], type: FieldType.number },
+          { name: 'time', type: FieldType.time },
+          { name: 'value', type: FieldType.number },
         ],
       });
+      // duration of the time range, in milliseconds.
+      const duration = to - from;
+
+      // step determines how close in time (ms) the points will be to each other.
+      const step = duration / 1000;
+
+      for (let t = 0; t < duration; t += step) {
+        frame.fields[0].values!.push(from + t);
+        frame.fields[1].values!.push(Math.sin((2 * Math.PI * t) / duration));
+      }
+      return frame;
     });
 
     return { data };

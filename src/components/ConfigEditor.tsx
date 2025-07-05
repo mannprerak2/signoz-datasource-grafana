@@ -9,12 +9,12 @@ export function ConfigEditor(props: Props) {
   const { onOptionsChange, options } = props;
   const { jsonData, secureJsonFields, secureJsonData } = options;
 
-  const onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const onSignozUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
     onOptionsChange({
       ...options,
       jsonData: {
         ...jsonData,
-        path: event.target.value,
+        signozUrl: event.target.value,
       },
     });
   };
@@ -45,12 +45,12 @@ export function ConfigEditor(props: Props) {
 
   return (
     <>
-      <InlineField label="Path" labelWidth={14} interactive tooltip={'Json field returned to frontend'}>
+      <InlineField label="Signoz Url" labelWidth={14} interactive tooltip={'Json field returned to frontend'}>
         <Input
-          id="config-editor-path"
-          onChange={onPathChange}
-          value={jsonData.path}
-          placeholder="Enter the path, e.g. /api/v1"
+          id="config-editor-signoz-url"
+          onChange={onSignozUrlChange}
+          value={jsonData.signozUrl}
+          placeholder="Enter the base url, e.g. https://signoz.pickrr.com"
           width={40}
         />
       </InlineField>
