@@ -33,13 +33,12 @@ const operatorOptions = [
   { label: '>=', value: '>=' },
 ];
 
-export function QueryEditor({ query, onChange }: Props) {
+export function QueryEditor({ query, onChange, datasource }: Props) {
   const { queryType, panelType, signozDataSource, filters = [], groupBy = [] } = query;
 
   const loadOptionsFromAPI = async (queryText: string, sourceFields: string[]): Promise<Array<ComboboxOption<string>>> => {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    let res = sourceFields
+    let res = (await datasource.makeSignozAutocompleteRequest(queryText))
       .filter(f => f.toLowerCase().includes(queryText.toLowerCase()))
       .map(f => ({ label: f, value: f }));
 

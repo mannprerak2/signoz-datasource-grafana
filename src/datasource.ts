@@ -45,7 +45,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
         const { queryType, panelType, signozDataSource, filters, groupBy } = query;
 
-        const response = await this.makeSignozRequest({
+        const response = await this.makeSignozGraphRequest({
           from: from,
           to: to,
           datasource: signozDataSource,
@@ -139,7 +139,31 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     }
   }
 
-  async makeSignozRequest(
+  async makeSignozAutocompleteRequest(searchText: string): Promise<string[]> {
+    try {
+      const response = await this.request("/signoz_api/api/v4/query_range", "", "POST", {
+        "compositeQuery": {
+          "queryType": "clickhouse_sql",
+          "panelType": "table",
+          "fillGaps": false,
+          "chQueries": {
+            "A": {
+              "name": "A",
+              "legend": "",
+              "disabled": false,
+              "query": `SELECT * FROM signoz_traces.span_attributes_keys where tagKey ILIKE '%${searchText}%' limit 100;`
+            }
+          }
+        }
+      });
+      return (response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.tagKey);
+    } catch (err) {
+      console.log(err);
+      return []
+    }
+  }
+
+  async makeSignozGraphRequest(
     data: {
       from: number
       to: number,
@@ -178,7 +202,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               functions: [],
               filters: {
                 op: 'AND',
-                items: data.filters?.map((i) => ({key: {key: i.key}, op: i.operator, value: i.value})),
+                items: data.filters?.map((i) => ({ key: { key: i.key }, op: i.operator, value: i.value })),
               },
               disabled: false,
               having: [],
