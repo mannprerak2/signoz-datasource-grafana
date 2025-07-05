@@ -71,12 +71,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   createDataFrameFromSeries(query: any, rawSeries: any) {
     const series = rawSeries?.values ?? [];
+    const name = JSON.stringify(rawSeries.labels);
     const frame = createDataFrame({
-      name: JSON.stringify(rawSeries.labels),
       refId: query.refId,
       fields: [
         { name: 'time', type: FieldType.time },
-        { name: 'value', type: FieldType.number },
+        { name: name, type: FieldType.number },
       ],
     });
     series.sort((i1: any, i2: any) => i1['timestamp'] - i2['timestamp']);

@@ -5,7 +5,9 @@ import {
   Input,
   Button,
   SegmentAsync,
-  Combobox
+  Combobox,
+  ComboboxOption,
+  MultiCombobox
 } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from '../datasource';
@@ -20,6 +22,7 @@ import {
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
 
 const filterableFields = ['service.name', 'http.request.method', 'http.response.status_code'];
+const groupByFields = ['service.name', 'http.request.method', 'http.response.status_code'];
 
 const operatorOptions = [
   { label: '=', value: '=' },
@@ -32,6 +35,19 @@ const operatorOptions = [
 
 export function QueryEditor({ query, onChange }: Props) {
   const { queryType, panelType, signozDataSource, filters = [], groupBy = [] } = query;
+
+  const loadOptionsFromAPI = async (queryText: string, sourceFields: string[]): Promise<Array<ComboboxOption<string>>> => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    let res = sourceFields
+      .filter(f => f.toLowerCase().includes(queryText.toLowerCase()))
+      .map(f => ({ label: f, value: f }));
+
+    if (queryText) {
+      res.push({ label: queryText + ": custom", value: queryText })
+    }
+    return res;
+  };
 
   const updateFilter = (index: number, key: string, value: string, operator: string) => {
     const newFilters = [...filters];
@@ -46,29 +62,6 @@ export function QueryEditor({ query, onChange }: Props) {
   const removeFilter = (index: number) => {
     const newFilters = filters.filter((_, i) => i !== index);
     onChange({ ...query, filters: newFilters });
-  };
-
-  const addGroupBy = (segment: SelectableValue<string>) => {
-    if (segment.value && !groupBy.includes(segment.value)) {
-      onChange({ ...query, groupBy: [...groupBy, segment.value] });
-    }
-  };
-
-  const removeGroupBy = (index: number) => {
-    const newGroupBy = groupBy.filter((_, i) => i !== index);
-    onChange({ ...query, groupBy: newGroupBy });
-  };
-
-  const loadGroupByOptions = async (): Promise<Array<SelectableValue<string>>> => {
-    // Simulate async load (replace with real API call)
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // TODO
-    return Promise.resolve(
-      ['service.name', 'http.request.method', 'http.response.status_code'].map(f => ({
-        label: f,
-        value: f,
-      }))
-    );
   };
 
   return (
@@ -106,19 +99,16 @@ export function QueryEditor({ query, onChange }: Props) {
       {filters.map((filter, index) => (
         <InlineFieldRow key={index}>
           <InlineField label="Filter">
-            <SegmentAsync
-              loadOptions={async () =>
-                Promise.resolve(filterableFields.map(f => ({ label: f, value: f })))
-              }
-              onChange={(selected) => {
-                const key = selected.value as string;
+            <Combobox
+              options={(queryText) => loadOptionsFromAPI(queryText, filterableFields)}
+              onChange={(selected: ComboboxOption<string> | null) => {
+                const key = selected ? selected.value : '';
                 const updated = [...filters];
                 updated[index] = { ...filter, key };
                 onChange({ ...query, filters: updated });
               }}
-              value={filter.key ? { label: filter.key, value: filter.key } : undefined}
+              value={filter.key}
               placeholder="Select field..."
-              allowCustomValue={true}
             />
           </InlineField>
 
@@ -160,25 +150,15 @@ export function QueryEditor({ query, onChange }: Props) {
 
 
       <InlineFieldRow>
-        <InlineField label="Group By">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {groupBy.map((key, i) => (
-              <Button
-                key={i}
-                variant="secondary"
-                icon="times"
-                onClick={() => removeGroupBy(i)}
-              >
-                {key}
-              </Button>
-            ))}
-            <SegmentAsync
-              loadOptions={loadGroupByOptions}
-              onChange={addGroupBy}
-              placeholder="Add group by"
-              allowCustomValue={true}
-            />
-          </div>
+        <InlineField label="Group By" grow>
+          <MultiCombobox
+            options={(queryText) => loadOptionsFromAPI(queryText, groupByFields)}
+            value={groupBy.map(value => ({ label: value, value }))}
+            onChange={(selected: Array<ComboboxOption<string>>) => {
+              onChange({ ...query, groupBy: selected.map(s => s.value!) });
+            }}
+            placeholder="Add group by"
+          />
         </InlineField>
       </InlineFieldRow>
     </div>
