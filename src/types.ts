@@ -5,6 +5,8 @@ export interface MyQuery extends DataQuery {
   queryType?: string;
   panelType?: string;
   signozDataSource: string;
+  filters?: { key: string; operator: string; value: string }[];
+  groupBy?: string[];
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {

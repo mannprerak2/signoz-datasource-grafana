@@ -134,7 +134,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       queryType?: string,
       panelType?: string,
       step?: number,
-      aggregateOperator?: string
+      aggregateOperator?: string,
+      aggregateAttribute?: string
     })  {
     try {
 
@@ -154,6 +155,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               expression: 'A',
               stepInterval: 60,
               aggregateOperator: data.aggregateOperator ?? "noop",
+              aggregateAttribute: {
+                    key: data.aggregateAttribute ?? ""
+              },
               timeAggregation: 'rate',
               spaceAggregation: 'sum',
               functions: [],
