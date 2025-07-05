@@ -43,7 +43,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       options.targets.map(async (target) => {
         const query = defaults(target, DEFAULT_QUERY);
 
-        const { queryType, panelType, signozDataSource, filters, groupBy } = query;
+        const { queryType, panelType, signozDataSource, filters, groupBy, aggregateOperator, aggregateAttribute } = query;
 
         const response = await this.makeSignozGraphRequest({
           from: from,
@@ -51,7 +51,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           datasource: signozDataSource,
           queryType: queryType,
           panelType: panelType,
-          aggregateOperator: "count",
+          aggregateOperator: aggregateOperator,
+          aggregateAttribute: aggregateAttribute,
           groupBy: groupBy,
           filters: filters,
         }) as any;
@@ -140,6 +141,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async makeSignozAttributeKeyAutocompleteRequest(searchText: string): Promise<string[]> {
+    const res = []
     try {
       const response = await this.request("/signoz_api/api/v4/query_range?autocomplete=keys", "", "POST", {
         "compositeQuery": {
@@ -156,11 +158,39 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           }
         }
       });
-      return (response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.tagKey);
+      res.push(...(response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.tagKey));
     } catch (err) {
       console.log(err);
-      return []
     }
+
+    // Hack: adding non tag fields
+    const nonTagFields = [
+      "span_id",
+      "parent_span_id",
+      "kind",
+      "status_code_string",
+      "response_status_code",
+      "external_http_method",
+      "trace_id",
+      "trace_state",
+      "flags",
+      "name",
+      "status_code",
+      "http_method",
+      "http_host",
+      "db_name",
+      "db_operation",
+      "has_error",
+      "kind_string",
+      "external_http_url",
+      "duration_nano",
+      "status_message",
+      "http_url",
+      "is_remote"
+    ];
+    res.push(...nonTagFields);
+    console.log(res);
+    return res;
   }
 
   async makeSignozAttributeValueAutocompleteRequest(tagKey: string, searchText: string): Promise<string[]> {

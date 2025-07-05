@@ -17,6 +17,7 @@ import {
   queryTypeOptions,
   panelTypeOptions,
   signozDataSourceOptions,
+  aggregateOperatorOptions,
 } from '../types';
 
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
@@ -42,7 +43,7 @@ const operatorOptions = [
 ];
 
 export function QueryEditor({ query, onChange, datasource }: Props) {
-  const { queryType, panelType, signozDataSource, filters = [], groupBy = [] } = query;
+  const { queryType, panelType, signozDataSource, filters = [], groupBy = [], aggregateOperator, aggregateAttribute } = query;
 
   const loadOptionsFromAPI = async (queryText: string, sourceFields: string[]): Promise<Array<ComboboxOption<string>>> => {
     // Simulate API call
@@ -106,10 +107,6 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
         </InlineField>
       </InlineFieldRow>
 
-      {/* <InlineFieldRow>
-        <InlineField label="Filters" />
-      </InlineFieldRow> */}
-
       {filters.map((filter, index) => (
         <InlineFieldRow key={index}>
           <InlineField label="Filter">
@@ -164,6 +161,28 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
         </InlineField>
       </InlineFieldRow>
 
+      <InlineFieldRow>
+
+        <InlineField label="Aggregate Operator">
+          <Combobox
+            options={aggregateOperatorOptions}
+            value={aggregateOperator}
+            onChange={v => onChange({ ...query, aggregateOperator: v.value! })}
+          />
+        </InlineField>
+
+        <InlineField label="Aggregate Attribute">
+          <Combobox
+            options={(queryText) => loadOptionsFromAPI(queryText, filterableFields)}
+            onChange={(selected: ComboboxOption<string> | null) => {
+              const attribute = selected ? selected.value : '';
+              onChange({ ...query, aggregateAttribute: attribute });
+            }}
+            value={aggregateAttribute}
+            placeholder="Select attribute..."
+          />
+        </InlineField>
+      </InlineFieldRow>
 
       <InlineFieldRow>
         <InlineField label="Group By" grow>

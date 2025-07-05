@@ -13,12 +13,16 @@ export interface MyQuery extends DataQuery {
   signozDataSource: string;
   filters?: Filter[];
   groupBy?: string[];
+  aggregateOperator?: string;
+  aggregateAttribute?: string;
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
   queryType: 'builder',
   panelType: 'graph',
   signozDataSource: 'traces',
+  aggregateOperator: 'count',
+  aggregateAttribute: '',
 };
 
 export const queryTypeOptions = [
@@ -41,10 +45,25 @@ export const signozDataSourceOptions = [
 ];
 
 export const aggregateOperatorOptions = [
-  { value: 'noop', label: 'No Op' },
   { value: 'count', label: 'Count' },
-  { value: 'p95', label: 'P95' },
+  { value: 'count_distinct', label: 'Count Distinct' },
+  { value: 'sum', label: 'Sum' },
   { value: 'avg', label: 'Avg' },
+  { value: 'max', label: 'Max' },
+  { value: 'min', label: 'Min' },
+  { value: 'p05', label: 'P05' },
+  { value: 'p10', label: 'P10' },
+  { value: 'p25', label: 'P25' },
+  { value: 'p50', label: 'P50' },
+  { value: 'p75', label: 'P75' },
+  { value: 'p90', label: 'P90' },
+  { value: 'p95', label: 'P95' },
+  { value: 'p99', label: 'P99' },
+  { value: 'rate', label: 'Rate' },
+  { value: 'rate_sum', label: 'Rate Sum' },
+  { value: 'rate_avg', label: 'Rate Avg' },
+  { value: 'rate_min', label: 'Rate Min' },
+  { value: 'rate_max', label: 'Rate Max' }
 ];
 
 export interface DataPoint {
