@@ -40,8 +40,8 @@ export const panelTypeOptions = [
 
 export const signozDataSourceOptions = [
   { value: 'traces', label: 'Traces' },
-  { value: 'metrics', label: 'Metrics' },
-  { value: 'logs', label: 'Logs' },
+  // { value: 'metrics', label: 'Metrics' },
+  // { value: 'logs', label: 'Logs' },
 ];
 
 export const aggregateOperatorOptions = [
