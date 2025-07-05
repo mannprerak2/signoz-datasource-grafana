@@ -19,7 +19,7 @@ import {
 
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
 
-const filterableFields = ['serviceName', 'operationName', 'statusCode', 'httpMethod'];
+const filterableFields = ['service.name', 'http.request.method', 'http.response.status_code'];
 
 const operatorOptions = [
   { label: '=', value: '=' },
@@ -64,7 +64,7 @@ export function QueryEditor({ query, onChange }: Props) {
     await new Promise(resolve => setTimeout(resolve, 500));
     // TODO
     return Promise.resolve(
-      ['serviceName', 'operationName', 'statusCode'].map(f => ({
+      ['service.name', 'http.request.method', 'http.response.status_code'].map(f => ({
         label: f,
         value: f,
       }))

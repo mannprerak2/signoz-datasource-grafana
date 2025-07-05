@@ -7,9 +7,10 @@ import {
   DataSourceInstanceSettings,
   createDataFrame,
   FieldType,
+  DataFrame,
 } from '@grafana/data';
 
-import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, queryTypeOptions } from './types';
+import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, Filter } from './types';
 import { lastValueFrom } from 'rxjs';
 
 import defaults from 'lodash/defaults';
@@ -37,18 +38,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const to = range!.to.valueOf();
 
     // Return a constant for each query.
-    const data = await Promise.all(
+    const finalDataFrames: DataFrame[] = []
+    await Promise.all(
       options.targets.map(async (target) => {
         const query = defaults(target, DEFAULT_QUERY);
-        const frame = createDataFrame({
-          refId: query.refId,
-          fields: [
-            { name: 'time', type: FieldType.time },
-            { name: 'value', type: FieldType.number },
-          ],
-        });
 
-        const { queryType, panelType, signozDataSource } = query;
+        const { queryType, panelType, signozDataSource, filters, groupBy } = query;
 
         const response = await this.makeSignozRequest({
           from: from,
@@ -56,22 +51,40 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           datasource: signozDataSource,
           queryType: queryType,
           panelType: panelType,
-          aggregateOperator: "count"
+          aggregateOperator: "count",
+          groupBy: groupBy,
+          filters: filters,
         }) as any;
 
-        let rawData = response.data as any;
-        const finalSeries = rawData?.data?.result[0]?.series[0]?.values;
-        finalSeries.sort((i1: any, i2: any) => i1['timestamp'] - i2['timestamp']);
-        for (let v of finalSeries) {
-          frame.fields[0].values!.push(v['timestamp']);
-          frame.fields[1].values!.push(parseInt(v['value'], 10));
+        const allSeries = response.data?.data?.result[0]?.series ?? []
+        for (const rawSeries of allSeries) {
+          let f = this.createDataFrameFromSeries(query, rawSeries);
+          finalDataFrames.push(f);
         }
-
-        return frame;
       }
       ));
 
+    const data = finalDataFrames;
     return { data };
+  }
+
+
+  createDataFrameFromSeries(query: any, rawSeries: any) {
+    const series = rawSeries?.values ?? [];
+    const frame = createDataFrame({
+      name: JSON.stringify(rawSeries.labels),
+      refId: query.refId,
+      fields: [
+        { name: 'time', type: FieldType.time },
+        { name: 'value', type: FieldType.number },
+      ],
+    });
+    series.sort((i1: any, i2: any) => i1['timestamp'] - i2['timestamp']);
+    for (let v of series) {
+      frame.fields[0].values!.push(v['timestamp']);
+      frame.fields[1].values!.push(parseInt(v['value'], 10));
+    }
+    return frame;
   }
 
   async request(url: string, params?: string, method?: string, data?: any) {
@@ -135,8 +148,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       panelType?: string,
       step?: number,
       aggregateOperator?: string,
-      aggregateAttribute?: string
-    })  {
+      aggregateAttribute?: string,
+      groupBy?: string[],
+      filters?: Filter[]
+    }) {
     try {
 
       const requestData = {
@@ -156,14 +171,14 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               stepInterval: 60,
               aggregateOperator: data.aggregateOperator ?? "noop",
               aggregateAttribute: {
-                    key: data.aggregateAttribute ?? ""
+                key: data.aggregateAttribute ?? ""
               },
               timeAggregation: 'rate',
               spaceAggregation: 'sum',
               functions: [],
               filters: {
-                items: [],
                 op: 'AND',
+                items: data.filters?.map((i) => ({key: {key: i.key}, op: i.operator, value: i.value})),
               },
               disabled: false,
               having: [],
@@ -174,7 +189,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
                   order: 'desc',
                 }
               ],
-              groupBy: [],
+              groupBy: data.groupBy?.map((i) => ({ key: i })),
               legend: '',
               reduceTo: 'avg',
             },

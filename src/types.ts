@@ -1,11 +1,17 @@
 import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
+export interface Filter {
+  key: string;
+  operator: string;
+  value: string;
+}
+
 export interface MyQuery extends DataQuery {
   queryType?: string;
   panelType?: string;
   signozDataSource: string;
-  filters?: { key: string; operator: string; value: string }[];
+  filters?: Filter[];
   groupBy?: string[];
 }
 
