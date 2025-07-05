@@ -165,6 +165,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   async makeSignozAttributeValueAutocompleteRequest(tagKey: string, searchText: string): Promise<string[]> {
     try {
+      if (!tagKey) {
+        return [];
+      }
       const response = await this.request("/signoz_api/api/v4/query_range?autocomplete=values", "", "POST", {
         "compositeQuery": {
           "queryType": "clickhouse_sql",
@@ -226,7 +229,11 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               functions: [],
               filters: {
                 op: 'AND',
-                items: data.filters?.map((i) => ({ key: { key: i.key }, op: i.operator, value: i.value })),
+                items: data.filters?.map((i) => {
+                  // TODO: splitting based on comma
+                  let value = (i.operator == "in" || i.operator == "not_in") ? i.value.split(",") : i.value;
+                  return ({ key: { key: i.key }, op: i.operator, value: value });
+                }),
               },
               disabled: false,
               having: [],

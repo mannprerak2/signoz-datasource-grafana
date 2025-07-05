@@ -25,12 +25,20 @@ const filterableFields = ['service.name', 'http.request.method', 'http.response.
 const groupByFields = ['service.name', 'http.request.method', 'http.response.status_code'];
 
 const operatorOptions = [
-  { label: '=', value: '=' },
-  { label: '!=', value: '!=' },
   { label: '<', value: '<' },
   { label: '<=', value: '<=' },
+  { label: '=', value: '=' },
+  { label: '!=', value: '!=' },
   { label: '>', value: '>' },
   { label: '>=', value: '>=' },
+  { label: 'IN', value: 'in' },
+  { label: 'NOT_IN', value: 'not_in' },
+  { label: 'CONTAINS', value: 'contains' },
+  { label: 'NOT_CONTAINS', value: 'not_contains' },
+  { label: 'EXISTS', value: 'exists' },
+  { label: 'NOT_EXISTS', value: 'not_exists' },
+  { label: 'REGEX', value: 'regex' },
+  { label: 'NOT_REGEX', value: 'not_regex' },
 ];
 
 export function QueryEditor({ query, onChange, datasource }: Props) {
@@ -56,19 +64,13 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
       .map(f => ({ label: f, value: f }));
 
     if (queryText) {
-      res.push({ label: queryText + ": custom", value: queryText })
+      res.unshift({ label: queryText + ": ?", value: queryText })
     }
     return res;
   };
 
-  const updateFilter = (index: number, key: string, value: string, operator: string) => {
-    const newFilters = [...filters];
-    newFilters[index] = { key, value, operator };
-    onChange({ ...query, filters: newFilters });
-  };
-
   const addFilter = () => {
-    onChange({ ...query, filters: [...filters, { key: '', value: '', operator: '' }] });
+    onChange({ ...query, filters: [...filters, { key: '', value: '', operator: '=' }] });
   };
 
   const removeFilter = (index: number) => {
