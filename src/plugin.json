@@ -9,7 +9,9 @@
     "author": {
       "name": "Mannprerak2"
     },
-    "keywords": ["datasource"],
+    "keywords": [
+      "datasource"
+    ],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
@@ -19,6 +21,18 @@
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
+  "routes": [
+    {
+      "path": "signoz_api",
+      "url": "{{ .JsonData.signozUrl }}",
+      "headers": [
+        {
+          "name": "SIGNOZ-API-KEY",
+          "content": "{{ .SecureJsonData.apiKey }}"
+        }
+      ]
+    }
+  ],
   "dependencies": {
     "grafanaDependency": ">=10.4.0",
     "plugins": []

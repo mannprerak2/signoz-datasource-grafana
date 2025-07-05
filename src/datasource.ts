@@ -63,9 +63,11 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     return { data };
   }
 
-  async request(url: string, params?: string) {
+  async request(url: string, params?: string, method?: string, data?: any) {
     const response = getBackendSrv().fetch<DataSourceResponse>({
       url: `${this.baseUrl}${url}${params?.length ? `?${params}` : ''}`,
+      method: method,
+      data: data
     });
     return lastValueFrom(response);
   }
@@ -75,13 +77,20 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
    */
   async testDatasource() {
     const defaultErrorMessage = 'Cannot connect to API';
-
     try {
-      const response = await this.request('/health');
+      const response = await this.request("/signoz_api/api/v4/query_range", "", "POST", {
+        "compositeQuery": {
+          "queryType": "builder",
+          "panelType": "graph",
+          "fillGaps": false,
+          "builderQueries": {
+          }
+        }
+      })
       if (response.status === 200) {
         return {
           status: 'success',
-          message: 'Success',
+          message: response.statusText,
         };
       } else {
         return {
