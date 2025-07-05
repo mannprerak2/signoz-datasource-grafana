@@ -38,7 +38,20 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
 
   const loadOptionsFromAPI = async (queryText: string, sourceFields: string[]): Promise<Array<ComboboxOption<string>>> => {
     // Simulate API call
-    let res = (await datasource.makeSignozAutocompleteRequest(queryText))
+    let res = (await datasource.makeSignozAttributeKeyAutocompleteRequest(queryText))
+      .filter(f => f.toLowerCase().includes(queryText.toLowerCase()))
+      .map(f => ({ label: f, value: f }));
+
+    if (queryText) {
+      res.push({ label: queryText + ": custom", value: queryText })
+    }
+    return res;
+  };
+
+  const loadFilterValueOptionsFromAPI = async (queryText: string, key: string): Promise<Array<ComboboxOption<string>>> => {
+    // This function will fetch values based on the selected key
+    // Simulate API call for now, will implement actual API call later
+    let res = (await datasource.makeSignozAttributeValueAutocompleteRequest(key, queryText))
       .filter(f => f.toLowerCase().includes(queryText.toLowerCase()))
       .map(f => ({ label: f, value: f }));
 
@@ -124,14 +137,16 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
           </InlineField>
 
           <InlineField label="Value" grow>
-            <Input
-              value={filter.value}
-              onChange={(e) => {
+            <Combobox
+              options={(queryText) => loadFilterValueOptionsFromAPI(queryText, filter.key)}
+              onChange={(selected: ComboboxOption<string> | null) => {
+                const value = selected ? selected.value : '';
                 const updated = [...filters];
-                updated[index] = { ...filter, value: e.currentTarget.value };
+                updated[index] = { ...filter, value };
                 onChange({ ...query, filters: updated });
               }}
-              placeholder="e.g. frontend"
+              value={filter.value}
+              placeholder="e.g. some-service"
             />
           </InlineField>
 

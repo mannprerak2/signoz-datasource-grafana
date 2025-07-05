@@ -139,9 +139,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     }
   }
 
-  async makeSignozAutocompleteRequest(searchText: string): Promise<string[]> {
+  async makeSignozAttributeKeyAutocompleteRequest(searchText: string): Promise<string[]> {
     try {
-      const response = await this.request("/signoz_api/api/v4/query_range", "", "POST", {
+      const response = await this.request("/signoz_api/api/v4/query_range?autocomplete=keys", "", "POST", {
         "compositeQuery": {
           "queryType": "clickhouse_sql",
           "panelType": "table",
@@ -157,6 +157,30 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         }
       });
       return (response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.tagKey);
+    } catch (err) {
+      console.log(err);
+      return []
+    }
+  }
+
+  async makeSignozAttributeValueAutocompleteRequest(tagKey: string, searchText: string): Promise<string[]> {
+    try {
+      const response = await this.request("/signoz_api/api/v4/query_range?autocomplete=values", "", "POST", {
+        "compositeQuery": {
+          "queryType": "clickhouse_sql",
+          "panelType": "table",
+          "fillGaps": false,
+          "chQueries": {
+            "A": {
+              "name": "A",
+              "legend": "",
+              "disabled": false,
+              "query": `SELECT * FROM signoz_traces.tag_attributes_v2 where tag_key = '${tagKey}' order by unix_milli desc limit 100;`
+            }
+          }
+        }
+      });
+      return (response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.string_value);
     } catch (err) {
       console.log(err);
       return []
