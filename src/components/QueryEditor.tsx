@@ -216,7 +216,7 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
           />
         </InlineField>
 
-        <InlineField label="Aggregate Attribute">
+        <InlineField label="Aggregate Attribute" required={aggregateOperator !== 'count'}>
           <Combobox
             options={(queryText) => loadOptionsFromAPI(queryText)}
             onChange={(selected: ComboboxOption<string> | null) => {
@@ -258,6 +258,7 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
           <Input
             type="number"
             value={limit}
+            default={true}
             onChange={e => onChange({ ...query, limit: parseInt(e.currentTarget.value, 10) })}
             placeholder="e.g. 100"
           />

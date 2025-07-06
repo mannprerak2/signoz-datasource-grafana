@@ -43,7 +43,7 @@ export const DEFAULT_QUERY: Partial<MyQuery> = {
   aggregateAttribute: {
     key: ''
   },
-  limit: 0,
+  limit: 100,
   having: [],
   orderBy: [],
 };
