@@ -42,5 +42,7 @@ ci/
 
 # Editor
 .idea
+.vscode
 
 .eslintcache
+.DS_store
