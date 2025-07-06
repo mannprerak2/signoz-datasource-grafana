@@ -4,8 +4,8 @@ This README is formatted for GitHub.
 
 # SigNoz Datasource for Grafana
 
-[![CI](https://github.com/mannprerak2/signoz-datasource/actions/workflows/ci.yml/badge.svg)](https://github.com/mannprerak2/signoz-datasource/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/mannprerak2/signoz-datasource)](LICENSE)
+[![CI](https://github.com/mannprerak2/signoz-datasource-grafana/actions/workflows/ci.yml/badge.svg)](https://github.com/mannprerak2/signoz-datasource-grafana/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/mannprerak2/signoz-datasource-grafana)](LICENSE)
 
 This is an open-source Grafana data source plugin that allows you to connect to [SigNoz](https://signoz.io/).
 
@@ -40,7 +40,7 @@ With this plugin, you can query and visualize data from SigNoz directly within y
 
 1.  **Install the plugin**:
     *   The easiest way is to use the [Grafana Plugin Catalog](https://grafana.com/grafana/plugins/).
-    *   Alternatively, you can download the latest release from the [Releases](https://github.com/mannprerak2/mannprerak2-signoz-datasource/releases) page and manually install it.
+    *   Alternatively, you can download the latest release from the [Releases](https://github.com/mannprerak2/mannprerak2-signoz-datasource-grafana/releases) page and manually install it.
 
 2.  **Configure the data source**:
     *   In Grafana, navigate to **Configuration > Data Sources**.
@@ -62,8 +62,8 @@ This project is built using the Grafana plugin tools. We welcome contributions!
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/mannprerak2/signoz-datasource.git
-    cd signoz-datasource
+    git clone https://github.com/mannprerak2/signoz-datasource-grafana.git
+    cd signoz-datasource-grafana
     ```
 
 2.  **Install dependencies:**
