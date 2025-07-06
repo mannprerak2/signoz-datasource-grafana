@@ -160,7 +160,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       });
       res.push(...(response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.tagKey));
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
 
     // Hack: adding non tag fields
@@ -189,7 +189,6 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       "is_remote"
     ];
     res.push(...nonTagFields);
-    console.log(res);
     return res;
   }
 
@@ -213,9 +212,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           }
         }
       });
-      return (response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.string_value);
+      return (response.data as any)?.data?.result[0]?.series?.map((i: any) => i?.labels.string_value) ?? [];
     } catch (err) {
-      console.log(err);
+      console.error(err);
       return []
     }
   }
@@ -261,7 +260,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
                 op: 'AND',
                 items: data.filters?.map((i) => {
                   // TODO: splitting based on comma
-                  let value = (i.operator == "in" || i.operator == "not_in") ? i.value.split(",") : i.value;
+                  let value = (i.operator === "in" || i.operator === "not_in") ? i.value.split(",") : i.value;
                   return ({ key: { key: i.key }, op: i.operator, value: value });
                 }),
               },
