@@ -10,7 +10,7 @@ import {
   DataFrame,
 } from '@grafana/data';
 
-import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, Filter } from './types';
+import { MyQuery, MyDataSourceOptions, DEFAULT_QUERY, Filter, AttributeKey, Having, OrderBy } from './types';
 import { lastValueFrom } from 'rxjs';
 
 import defaults from 'lodash/defaults';
@@ -37,13 +37,14 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     const from = range!.from.valueOf();
     const to = range!.to.valueOf();
 
+    const step = Math.max((options.intervalMs / 1000), 60)
     // Return a constant for each query.
     const finalDataFrames: DataFrame[] = []
     await Promise.all(
       options.targets.map(async (target) => {
         const query = defaults(target, DEFAULT_QUERY);
 
-        const { queryType, panelType, signozDataSource, filters, groupBy, aggregateOperator, aggregateAttribute } = query;
+        const { queryType, panelType, signozDataSource, filters, groupBy, aggregateOperator, aggregateAttribute, limit, having, orderBy } = query;
 
         const response = await this.makeSignozGraphRequest({
           from: from,
@@ -55,6 +56,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           aggregateAttribute: aggregateAttribute,
           groupBy: groupBy,
           filters: filters,
+          limit: limit,
+          having: having,
+          orderBy: orderBy,
+          step: step
         }) as any;
 
         const allSeries = response.data?.data?.result[0]?.series ?? []
@@ -228,9 +233,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       panelType?: string,
       step?: number,
       aggregateOperator?: string,
-      aggregateAttribute?: string,
-      groupBy?: string[],
-      filters?: Filter[]
+      aggregateAttribute?: AttributeKey,
+      groupBy?: AttributeKey[],
+      filters?: Filter[],
+      limit?: number,
+      having?: Having[],
+      orderBy?: OrderBy[],
     }) {
     try {
 
@@ -250,9 +258,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
               expression: 'A',
               stepInterval: 60,
               aggregateOperator: data.aggregateOperator ?? "noop",
-              aggregateAttribute: {
-                key: data.aggregateAttribute ?? ""
-              },
+              aggregateAttribute: data.aggregateAttribute ?? DEFAULT_QUERY.aggregateAttribute,
               timeAggregation: 'rate',
               spaceAggregation: 'sum',
               functions: [],
@@ -265,15 +271,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
                 }),
               },
               disabled: false,
-              having: [],
-              limit: null,
-              orderBy: [
-                {
-                  columnName: 'timestamp',
-                  order: 'desc',
-                }
-              ],
-              groupBy: data.groupBy?.map((i) => ({ key: i })),
+              having: data.having ?? [],
+              limit: data.limit ?? null,
+              orderBy: data.orderBy ?? [],
+              groupBy: data.groupBy ?? [],
               legend: '',
               reduceTo: 'avg',
             },

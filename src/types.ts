@@ -7,14 +7,32 @@ export interface Filter {
   value: string;
 }
 
+export interface Having {
+  columnName: string;
+  op: string;
+  value: string;
+}
+
+export interface OrderBy {
+  columnName: string;
+  order: string;
+}
+
+export interface AttributeKey {
+  key: string;
+}
+
 export interface MyQuery extends DataQuery {
   queryType?: string;
   panelType?: string;
   signozDataSource: string;
   filters?: Filter[];
-  groupBy?: string[];
+  groupBy?: AttributeKey[];
   aggregateOperator?: string;
-  aggregateAttribute?: string;
+  aggregateAttribute?: AttributeKey;
+  limit?: number;
+  having?: Having[];
+  orderBy?: OrderBy[];
 }
 
 export const DEFAULT_QUERY: Partial<MyQuery> = {
@@ -22,7 +40,12 @@ export const DEFAULT_QUERY: Partial<MyQuery> = {
   panelType: 'graph',
   signozDataSource: 'traces',
   aggregateOperator: 'count',
-  aggregateAttribute: '',
+  aggregateAttribute: {
+    key: ''
+  },
+  limit: 0,
+  having: [],
+  orderBy: [],
 };
 
 export const queryTypeOptions = [

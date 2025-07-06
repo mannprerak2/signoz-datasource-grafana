@@ -18,6 +18,9 @@ import {
   panelTypeOptions,
   signozDataSourceOptions,
   aggregateOperatorOptions,
+  AttributeKey,
+  Having,
+  OrderBy,
 } from '../types';
 
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
@@ -43,10 +46,9 @@ const operatorOptions = [
 ];
 
 export function QueryEditor({ query, onChange, datasource }: Props) {
-  const { queryType, panelType, signozDataSource, filters = [], groupBy = [], aggregateOperator, aggregateAttribute } = query;
+  const { queryType, panelType, signozDataSource, filters = [], groupBy = [], aggregateOperator, aggregateAttribute, limit, having = [], orderBy = [] } = query;
 
-  const loadOptionsFromAPI = async (queryText: string, sourceFields: string[]): Promise<Array<ComboboxOption<string>>> => {
-    // Simulate API call
+  const loadOptionsFromAPI = async (queryText: string): Promise<Array<ComboboxOption<string>>> => {
     let res = (await datasource.makeSignozAttributeKeyAutocompleteRequest(queryText))
       .filter(f => f.toLowerCase().includes(queryText.toLowerCase()))
       .map(f => ({ label: f, value: f }));
@@ -55,6 +57,17 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
       res.push({ label: queryText + ": custom", value: queryText })
     }
     return res;
+  };
+
+  const loadHavingColumnOptions = async (queryText: string): Promise<Array<ComboboxOption<string>>> => {
+    const options: Array<ComboboxOption<string>> = [];
+    if (aggregateOperator) {
+      options.push({ label: `#${aggregateOperator.toUpperCase()}`, value: `#SIGNOZ_VALUE` });
+    }
+    groupBy.forEach(g => {
+      options.push({ label: g.key, value: g.key });
+    });
+    return options.filter(o => o.label?.toLowerCase().includes(queryText.toLowerCase()));
   };
 
   const loadFilterValueOptionsFromAPI = async (queryText: string, key: string): Promise<Array<ComboboxOption<string>>> => {
@@ -78,6 +91,38 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
     const newFilters = filters.filter((_, i) => i !== index);
     onChange({ ...query, filters: newFilters });
   };
+
+  const addHaving = () => {
+    onChange({ ...query, having: [...having, { columnName: '', op: '>', value: '' }] });
+  };
+
+  const removeHaving = (index: number) => {
+    const newHaving = having.filter((_, i) => i !== index);
+    onChange({ ...query, having: newHaving });
+  };
+
+  const addOrderBy = () => {
+    onChange({ ...query, orderBy: [...orderBy, { columnName: '', order: 'asc' }] });
+  };
+
+  const removeOrderBy = (index: number) => {
+    const newOrderBy = orderBy.filter((_, i) => i !== index);
+    onChange({ ...query, orderBy: newOrderBy });
+  };
+
+  const orderByOrderOptions = [
+    { label: 'Ascending', value: 'asc' },
+    { label: 'Descending', value: 'desc' },
+  ];
+
+  const havingOperatorOptions = [
+    { label: '<', value: '<' },
+    { label: '<=', value: '<=' },
+    { label: '=', value: '=' },
+    { label: '!=', value: '!=' },
+    { label: '>', value: '>' },
+    { label: '>=', value: '>=' },
+  ];
 
   return (
     <div>
@@ -111,7 +156,7 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
         <InlineFieldRow key={index}>
           <InlineField label="Filter">
             <Combobox
-              options={(queryText) => loadOptionsFromAPI(queryText, filterableFields)}
+              options={(queryText) => loadOptionsFromAPI(queryText)}
               onChange={(selected: ComboboxOption<string> | null) => {
                 const key = selected ? selected.value : '';
                 const updated = [...filters];
@@ -173,12 +218,15 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
 
         <InlineField label="Aggregate Attribute">
           <Combobox
-            options={(queryText) => loadOptionsFromAPI(queryText, filterableFields)}
+            options={(queryText) => loadOptionsFromAPI(queryText)}
             onChange={(selected: ComboboxOption<string> | null) => {
-              const attribute = selected ? selected.value : '';
-              onChange({ ...query, aggregateAttribute: attribute });
+              const key = selected ? selected.value : '';
+              const newAttribute: AttributeKey = {
+                key: key
+              };
+              onChange({ ...query, aggregateAttribute: newAttribute });
             }}
-            value={aggregateAttribute}
+            value={aggregateAttribute?.key}
             placeholder="Select attribute..."
           />
         </InlineField>
@@ -187,13 +235,128 @@ export function QueryEditor({ query, onChange, datasource }: Props) {
       <InlineFieldRow>
         <InlineField label="Group By" grow>
           <MultiCombobox
-            options={(queryText) => loadOptionsFromAPI(queryText, groupByFields)}
-            value={groupBy.map(value => ({ label: value, value }))}
+            options={(queryText) => loadOptionsFromAPI(queryText)}
+            value={groupBy.map(attr => ({ label: attr.key, value: attr.key }))}
             onChange={(selected: Array<ComboboxOption<string>>) => {
-              onChange({ ...query, groupBy: selected.map(s => s.value!) });
+              const newGroupBy: AttributeKey[] = selected.map(s => ({
+                key: s.value!,
+                dataType: '',
+                type: '',
+                isColumn: false,
+                isJSON: false,
+                id: s.value!,
+              }));
+              onChange({ ...query, groupBy: newGroupBy });
             }}
             placeholder="Add group by"
           />
+        </InlineField>
+      </InlineFieldRow>
+
+      <InlineFieldRow>
+        <InlineField label="Limit">
+          <Input
+            type="number"
+            value={limit}
+            onChange={e => onChange({ ...query, limit: parseInt(e.currentTarget.value, 10) })}
+            placeholder="e.g. 100"
+          />
+        </InlineField>
+      </InlineFieldRow>
+
+      {groupBy.length > 0 && (
+        <>
+          {having.map((h, index) => (
+            <InlineFieldRow key={`having-${index}`}>
+              <InlineField label="Having">
+                <Combobox
+                  options={(queryText) => loadHavingColumnOptions(queryText)}
+                  onChange={(selected: ComboboxOption<string> | null) => {
+                    const columnName = selected ? selected.value : '';
+                    const updated = [...having];
+                    updated[index] = { ...h, columnName };
+                    onChange({ ...query, having: updated });
+                  }}
+                  value={h.columnName}
+                  placeholder="Select column..."
+                />
+              </InlineField>
+
+              <InlineField label="Operator">
+                <Combobox
+                  options={havingOperatorOptions}
+                  value={h.op}
+                  onChange={(v) => {
+                    const updated = [...having];
+                    updated[index] = { ...h, op: v.value! };
+                    onChange({ ...query, having: updated });
+                  }}
+                />
+              </InlineField>
+
+              <InlineField label="Value" grow>
+                <Input
+                  value={h.value}
+                  onChange={e => {
+                    const updated = [...having];
+                    updated[index] = { ...h, value: e.currentTarget.value };
+                    onChange({ ...query, having: updated });
+                  }}
+                  placeholder="e.g. 100"
+                />
+              </InlineField>
+
+              <InlineField>
+                <Button icon="trash-alt" variant="destructive" onClick={() => removeHaving(index)} />
+              </InlineField>
+            </InlineFieldRow>
+          ))}
+
+          <InlineFieldRow>
+            <InlineField label="Having">
+              <Button icon="plus" onClick={addHaving}></Button>
+            </InlineField>
+          </InlineFieldRow>
+        </>
+      )}
+
+      {orderBy.map((o, index) => (
+        <InlineFieldRow key={`orderBy-${index}`}>
+          <InlineField label="Order By Column">
+            <Combobox
+              options={(queryText) => loadHavingColumnOptions(queryText)}
+              onChange={(selected: ComboboxOption<string> | null) => {
+                const columnName = selected ? selected.value : '';
+                const updated = [...orderBy];
+                updated[index] = { ...o, columnName };
+                onChange({ ...query, orderBy: updated });
+              }}
+              value={o.columnName}
+              placeholder="Select column..."
+            />
+          </InlineField>
+
+          <InlineField label="Order">
+            <Combobox
+              options={orderByOrderOptions}
+              value={o.order}
+              onChange={(v) => {
+                const updated = [...orderBy];
+                updated[index] = { ...o, order: v.value! };
+                onChange({ ...query, orderBy: updated });
+              }}
+            />
+          </InlineField>
+
+          <InlineField>
+            <Button icon="trash-alt" variant="destructive" onClick={() => removeOrderBy(index)} />
+          </InlineField>
+        </InlineFieldRow>
+      ))}
+
+      <InlineFieldRow>
+        <InlineField label="Order By">
+          <Button icon="plus" onClick={addOrderBy}></Button>
         </InlineField>
       </InlineFieldRow>
     </div>
